@@ -30,6 +30,7 @@ namespace Mobcast.CoffeeEditor.UI
 		static GUIContent contentLoopOff;
 		static GUIContent contentPressInterval;
 		static GUIContent contentHoldThreshold;
+		static GUIContent contentDoubleClickThreshold;
 		static Color COLOR_ENABLE = new Color(1, 1, 1);
 		static Color COLOR_DISABLE = new Color(1, 1, 1, 0.6f);
 
@@ -45,12 +46,14 @@ namespace Mobcast.CoffeeEditor.UI
 			contentLoopOff = new GUIContent(EditorGUIUtility.FindTexture("playloopoff"), "Press Repeat");
 			contentPressInterval = new GUIContent("Interval", "Interval time to invoke press callback");
 			contentHoldThreshold = new GUIContent("Threshold", "Threshold time to invoke hold callback");
+			contentDoubleClickThreshold = new GUIContent("Threshold", "Threshold time to invoke double click callback");
 
 			eventProperties = new Dictionary<EventType, SerializedProperty>()
 			{
 				{ EventType.Click,serializedObject.FindProperty("m_OnClick") },
 				{ EventType.Press,serializedObject.FindProperty("m_OnPress") },
 				{ EventType.Hold,serializedObject.FindProperty("m_OnHold") },
+				{ EventType.DoubleClick,serializedObject.FindProperty("m_OnDoubleClicked") },
 			};
 
 			callbackDrawers = new Dictionary<EventType, System.Action>()
@@ -104,6 +107,21 @@ namespace Mobcast.CoffeeEditor.UI
 						spThreshold.floatValue = EditorGUI.FloatField(new Rect(last.xMax - 60, last.y + 2, 55, 14), spThreshold.floatValue, EditorStyles.miniTextField);
 					}
 				},
+				//双击
+				{
+					EventType.DoubleClick,
+					() =>
+					{
+						EditorGUILayout.LabelField("Double Click", EditorStyles.boldLabel);
+						EditorGUILayout.PropertyField(eventProperties[EventType.DoubleClick]);
+
+						var last = GUILayoutUtility.GetLastRect();
+						var spThreshold = serializedObject.FindProperty("m_DoubleClickThreshold");
+
+						EditorGUI.LabelField(new Rect(last.xMax - 130, last.y + 1, 70, 14), contentDoubleClickThreshold);
+						spThreshold.floatValue = EditorGUI.FloatField(new Rect(last.xMax - 60, last.y + 2, 55, 14), spThreshold.floatValue, EditorStyles.miniTextField);
+					}
+				},
 			};
 		}
 
@@ -124,7 +142,7 @@ namespace Mobcast.CoffeeEditor.UI
 			// イベントタイプ.
 			var spType = serializedObject.FindProperty("m_EventType");
 			int oldType = spType.intValue;
-			spType.intValue = (int)((EventType)EditorGUILayout.EnumMaskField(new GUIContent("Event Type"), (EventType)spType.intValue));
+			spType.intValue = (int)((EventType)EditorGUILayout.EnumFlagsField(new GUIContent("Event Type"), (EventType)spType.intValue));
 
 			// イベントタイプに合わせて、必要ななイベントのみ詳細を描画.
 			foreach (EventType e in System.Enum.GetValues(typeof(EventType)))
@@ -154,7 +172,7 @@ namespace Mobcast.CoffeeEditor.UI
 			// Skip properties declared in ButtonEx.
 			var itr = serializedObject.GetIterator();
 			itr.NextVisible(true);
-			while (itr.NextVisible(false) && itr.name != "m_OnHold")
+			while (itr.NextVisible(false) && itr.name != "m_OnDoubleClicked")
 				;
 
 			// Draw properties declared in Custom-ButtonEx.
